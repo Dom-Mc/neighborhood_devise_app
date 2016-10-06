@@ -1,8 +1,9 @@
 # Devise 101
 
 
-
 ## Getting Started
+
+This guide was designed to both assist with the setup process and optional configuration while getting started with Devise. The guide itself is based off Devise version 4.2.0 (however it should be consistent for versions >= 4.0) and Rails version 5.0 . Please note, configuration options in earlier versions of Rails will vary. Consult Devise' documentation for more information.
 
 ### (1) Add The Devise Gem
 + Add the Devise gem to your project's `Gemfile` and then run `bundle install`:
@@ -92,49 +93,52 @@ While the following steps aren't necessary, they are helpful as you begin to cus
 + This generator will create a new `devise` directory inside of your `views` folder and will house all Devise related views (readily available for editing). `app/views/devise` will now contain the following directories:
 
 
-__confirmations:__
+__confirmations__
 + Contains a lone `new.html.erb` view which gets rendered when a user requests for a confirmation email to be resent.
 
-__mailer:__
+__mailer__
 + Where you'll find Devise' email templates. They include `confirmation_instructions.html.erb`, `password_change.html.erb`, `reset_password_instructions.html.erb`, and  `unlock_instructions.html.erb` views.
 
-__passwords:__
+__passwords__
 + Contains a `new.html.erb` and `edit.html.erb` views which are forms to reset an email address, request new password, and to change a password.
 
-__registrations:__
+__registrations__
 + The `new.html.erb` view is rendered when a new user registers and the `edit.html.erb` contains a form to update their profile.
 
-__sessions:__
+__sessions__
 + Contains only a `new.html.erb` file, which functions as the login form for your application.
 
-__shared:__
+__shared__
 + Contains only the partial `_links.html.erb`, which includes links that are displayed on each Devise’ view (example: "Sign in", "Forgot your password?", etc.)
 
-__unlocks:__
+__unlocks__
 + Contains only a `new.html.erb` view with a form for requesting an unlock account link via email.
 
-###### Note: If you would like to generate only a few sets of views, for example the `registerable` and the `confirmable` modules, simply pass the generator a list of specific modules to include adding the `-v` flag.
+###### Note: If you would like to generate only a few sets of views, for example the `registerable` and the `confirmable` modules, simply pass the generator a list of specific modules by adding the `-v` flag.
 
   `$ rails g devise:views -v registrations confirmations`
 
 
 ***
 ### Creating views (with scopes)
-By default, Devise' models share the same views however this behavior can be changed to create different views based on their scope.
+By default Devise' models share the same view(s) however this behavior can be modified to use different views based on scope.
 
-+ Lets say you have two Devise models, a User and Admin, and you'd like to generate different views for each model. You'll need to inside of your `config/initializers/devise.rb` file and *uncomment* the following line of code:
++ Lets say you created a devise model for User & Admin, and you'd like to generate different views for each. First you'll need to edit your `config/initializers/devise.rb` file and *uncomment* the following line of code to show:
 
   `config.scoped_views = true`
-
-+ Next simply pass in the name of the model (scope) to the generator and Devise will take care of the rest.
++ Next pass in the name of the model (scope) to the generator and Devise will take care of the rest.
 
 `$ rails g devise:views users`
-`$ rails g devise:views admin`
+`$ rails g devise:views admins`
 
 + This action will generate the same views as before with the `rails g devise:views` command except rather than creating `app/views/devise`, your views will be housed inside a newly created directory named after your scope. For example you'll have directories for `app/views/users/sessions`, `app/views/admin/registrations`, and so forth.
 
 + If for any reason a specific view is not found within a given scope, Devise will instead attempt to look for a default view for that module in the `app/views/devise/<module name>` directory.
 
+###### Note: Once again you can optionally generate specific views by passing in the `-v` flag.
+
+`$ rails g devise:views users -v registrations`
+`$ rails g devise:views admins -v registrations confirmations`
 
 ***
 ### Configuring/Customizing Controllers
@@ -155,14 +159,13 @@ When you customize a Devise view, at some point you'll probably want to add addi
 
 + If you would like to permit additional parameters, you can do so by adding a `before_action` in your `ApplicationController`.
 
-+ Next create a `#configure_permitted_parameters` method, include `devise_parameter_sanitizer.permit(:sign_up, keys: [])`, and add your new parameters to the `keys: [:your_attribute]` array.
++ Next create a `#configure_permitted_parameters` method, include `devise_parameter_sanitizer.permit(:sign_up, keys: [])`, and add your new parameters to the `keys: [:your_attribute]` hash.
 
 ```ruby
 class ApplicationController < ActionController::Base
   protect_from_forgery with: :exception
 
   before_action :configure_permitted_parameters, if: :devise_controller?
-
 
   protected
 
@@ -173,11 +176,7 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-
-#### Handling Nested Attributes
-The example above is fine when adding a basic field(s) where the parameters are simple scalar types. However if you're adding *nested attributes* (example: you're using `accepts_nested_attributes_for` in your model), in this case you'll need to inform Devise about those nestings and types.
-
-+ Optionally you may change Devise' defaults or provide custom behavior by passing a block. To permit simple scalar values for both a username and email, you could use the following technique:
++ Optionally you may change Devise' defaults or provide custom behavior by passing a block.
 
 ```ruby
 def configure_permitted_parameters
@@ -201,29 +200,44 @@ end
 
 
 ### Option 2
-If customization at the view level is not enough, you can create customized controller by following these steps:
+If customization at the view level is not enough, you can overwrite a Devise controller(s) by creating your own. Follow these steps:
+
+ <!-- customized controller by following these steps: -->
 
 #### 1. Generating new custom controller(s)
-In order to generate custom controllers with Devise, you must provide a scope. If you do not specify a controller, it will be assumed you want to generate all 6 Devise controllers.  Run the following command to create a Devise controller(s):
+In order to generate custom controllers with Devise, you must provide a scope. If you do not specify a controller name, it will be assumed you want to generate all 6 Devise controllers.
 
 `$ rails g devise:controllers users`
 
-+ The command above would generate the following controllers and place them inside of `app/controllers/users` directory.
++ The command above will generate the following controllers and place them inside of `app/controllers/users` directory.
 
-    `confirmations controller`
-    `passwords controller`
-    `registrations controller`
-    `sessions controller`
-    `unlocks controller`
-    `omniauth_callbacks controller`
+    - `confirmations controller`
+    - `passwords controller`
+    - `registrations controller`
+    - `sessions controller`
+    - `unlocks controller`
+    - `omniauth_callbacks controller`
 
-+ To target a specific Devise controller to create, pass in the `-c` flag followed by the controller's name you'd like to create.
++ To target a specific Devise controller, use the `-c` flag followed by the name of the controller(s) you'd like to create.
 
   `rails g devise:controllers users -c=registrations`
 
-+ The command above would generate a Devise `registrations` controller and place it inside of your `app/controllers/users` directory.
++ The command above would generate a Devise `registrations` controller inside of the `app/controllers/users` directory.
 
-#### 2. Overriding default controllers
+###### Note: Your new controller(s) will inherit from a corresponding Devise controller therefore you can optionally replicate the process above by creating a new controller by hand and make it inherit from Devise:
+
+ `touch app/controllers/users/registrations_controller.rb`
+
+```ruby
+class Users::RegistrationsController < Devise::RegistrationsController
+
+  # your custom behavior
+
+end
+```
+
+
+#### 2. Edit your routes file
 In your `config/routes.rb` file, you'll need to tell the router to use the newly created controller(s) as opposed to the corresponding default Devise controller you're overriding.
 
 ```ruby
@@ -234,8 +248,7 @@ In your `config/routes.rb` file, you'll need to tell the router to use the newly
     end
 ```
 
-+ Adding the `:controllers` option allows us to override what controller devise uses for certain modules, and in this example we're overriding the default `sessions` controller with our own located in `users/sessions_controller.rb`.
-
++ Adding the `:controllers` option allows us to override what controller devise uses for certain modules. In this example we're overriding the default `sessions` controller with our own located in `users/sessions_controller.rb`.
 
 
 
@@ -244,14 +257,14 @@ If you've previously generated views (`rails g devise:views`), they'll need to b
 
 + For example if you've generated a new Devise `sessions` controller with a `users` scope, Devise won't use the default views located in `devise/sessions/`, but rather look for corresponding views in the `users/sessions/` directory. Therefore you'll need to move or copy all related views to their new directories.
 
-+ If on the other hand you have not yet created your Devise views, simply provide the scope you'd like the views to be placed in.
++ If on the other hand you have not yet created Devise views, simply provide a scope.
 
-+ Running `rails g devise:views users` would automatically place your new views inside the `app/views/users` directory, making it ready to use by your new controller(s).
++ Running `rails g devise:views users` would automatically place your new views inside the `app/views/users` directory, making them available for use by your new controller(s).
 
 
 #### 4. Setting your new controller actions
 + Finally, change or extend the desired actions of your newly created controllers.
-+ You can completely override a controller action:
++ You can completely override a controller's actions:
 
 ```ruby
 class Users::SessionsController < Devise::SessionsController
@@ -261,7 +274,7 @@ class Users::SessionsController < Devise::SessionsController
 end
 ```
 
-+ Optionally you can simply add new behavior to it (useful for triggering background jobs or logging events during certain actions.):
++ Optionally you can add new behavior (useful for triggering background jobs or logging events during certain actions):
 
 ```ruby
 class Users::SessionsController < Devise::SessionsController
@@ -272,3 +285,25 @@ class Users::SessionsController < Devise::SessionsController
   end
 end
 ```
+
+***
+### Additional Resources
+
+* https://github.com/plataformatec/devise
+* https://github.com/plataformatec/devise/wiki/_pages
+* https://github.com/plataformatec/devise/wiki/How-Tos
+* https://launchschool.com/blog/how-to-use-devise-in-rails-for-authentication
+* https://www.sitepoint.com/devise-authentication-in-depth/
+
+
+#### Handling Redirects
+* https://github.com/plataformatec/devise/wiki/How-To:-redirect-to-a-specific-page-on-successful-sign-in
+
+
+#### Devise with OAuth
+* https://github.com/plataformatec/devise/wiki/OmniAuth:-Overview
+* http://stackoverflow.com/a/20737719/4467956
+
+
+#### Overriding Custom Behavior
+* https://github.com/plataformatec/devise/wiki/How-To%3a-Allow-users-to-edit-their-account-without-providing-a-password
